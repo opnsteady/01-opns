@@ -15,6 +15,8 @@ import { ProgressBar, ProgressBarProvider } from "react-transition-progress";
 
 * Provider 세팅 필요
 
+<br />
+
 ```tsx
 "use client";
 import { useState, startTransition } from "react";
@@ -45,6 +47,8 @@ export default function MyComponent() {
 
 - transition 시 startProgress 사용해서 진행률 표시
 
+<br />
+
 ```tsx
 import { Link } from "react-transition-progress/next";
 
@@ -58,6 +62,8 @@ import { Link } from "react-transition-progress/next";
 - 내부적으로 framer-motion 사용 중
   - LazyMotion을 내부적으로 사용
   - https://github.com/vercel/react-transition-progress/blob/29fb5713b6f5a27354f9c66109220fd5613e2ed0/src/index.tsx#L162-L172
+
+<br />
 
 - useProgress는 컨텍스트의 반환 값을 사용
 
@@ -76,6 +82,8 @@ export function useProgress(): StartProgress {
 
 - start 외에 다른 메서드들이 있으나, 해당 인터페이스만 노출시키는 모습
 
+<br />
+
 - 그렇다면 컨텍스트는?
 
 ```tsx
@@ -87,6 +95,8 @@ const ProgressBarContext = createContext<ReturnType<typeof useProgressInternal> 
 ```
 
 - `useProgressInternal` 훅의 반환 값을 타입으로 사용
+
+<br />
 
 ```tsx
 https://github.com/vercel/react-transition-progress/blob/29fb5713b6f5a27354f9c66109220fd5613e2ed0/src/index.tsx#L66-L107
@@ -139,6 +149,8 @@ export function useProgressInternal() {
   - 이후 `setLoading(true)`문을 통해서 true가 되고, useOptimistic의 updateFn을 사용하지 않았기 때문에 작업 이후 초기 값인 false가 되는 것으로 보임
     - `optimisticState: 결과적인 낙관적인 상태입니다. 작업이 대기 중이지 않을 때는 state와 동일하며, 그렇지 않은 경우 updateFn에서 반환된 값과 동일합니다.`
 
+<br />
+
 - useInterval을 만들어서 사용하는데요
 
 ```tsx
@@ -167,6 +179,8 @@ function useInterval(callback: () => void, delay: number | null) {
 ```
 
 - 조건문 내부에서 effect 클린업을 사용할 수도 있겠구나 알게됨
+
+<br />
 
 - Next.js 헬퍼 Link 컴포넌트는
 
