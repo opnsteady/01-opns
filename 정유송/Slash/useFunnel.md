@@ -91,3 +91,114 @@ export const Step = <Steps extends NonEmptyArray<string>>({ onEnter, children }:
     - 자식 컴포넌트의 props의 name이 steps 배열에 있는 요소인지를 확인
 - Funnel의 step props에 따라 targetStep (=자식 요소)가 정해지고 이것이 반환됨
 - 고차 컴포넌트를 활용해 name 부여
+
+
+## useFunnel
+
+**`useFunnel<Step[]>(steps, options)`**
+
+```tsx
+export const useFunnel = <Steps extends NonEmptyArray<string>>(
+  steps: Steps,
+  options?: {
+    /**
+     * 이 query key는 현재 스텝을 query string에 저장하기 위해 사용됩니다.
+     * @default 'funnel-step'
+     */
+    stepQueryKey?: string;
+    initialStep?: Steps[number];
+    onStepChange?: (name: Steps[number]) => void;
+  }
+)
+```
+
+- `steps`
+    - `Steps[]` 타입의 문자열 배열을 받아 이를 기반으로 단계를 관리
+    - `Steps`는 `NonEmptyArray<string>`를 확장한 타입,
+        - `type NonEmptyArray<T> = readonly [T, ...T[]];` : readonly 읽기 전용 타입
+- `options`: optional
+    - `stepQueryKey`
+        - 현재 스텝을 query string에 저장하기 위해 사용, 기본값 `funnel-step`
+    - `initialStep`
+    - `onStepChange`
+        - step이 변경될 때마다 전달된 콜백이 호출됨
+
+```tsx
+const FunnelComponent = useMemo(
+  () =>
+    Object.assign(
+      function RouteFunnel(props: RouteFunnelProps<Steps>) {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const step = useQueryParam<Steps[number]>(stepQueryKey) ?? options?.initialStep;
+
+        assert(
+          step != null,
+          `표시할 스텝을 ${stepQueryKey} 쿼리 파라미터에 지정해주세요. 쿼리 파라미터가 없을 때 초기 스텝을 렌더하려면 useFunnel의 두 번째 파라미터 options에 initialStep을 지정해주세요.`
+        );
+
+        return <Funnel<Steps> steps={steps} step={step} {...props} />;
+      },
+      {
+        Step,
+      }
+    ),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  []
+);
+
+```
+
+- [`Object.assign(target, …sources)`](https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Global_Objects/Object/assign)
+    - source 객체를 target 객체에 병합한 결과를 반환해주는 메서드
+    - 동일한 key를 갖는 경우 sources 객체의 값으로 덮어쓰게 됨
+    
+    ⇒ target과 source 객체 두 가지 요소를 포함한 새로운 객체가 생성됨
+    
+- `RouteFunnel`
+    - useQueryParam을 활용해 현재 step을 가져오고 그에 따른 `Funnel`을 렌더링함
+- `Step`
+    - `Funnel` 컴포넌트에 선언된 `Step`
+    - 특정 단계에 진입 했을 때 콜백 함수 실행 혹은 자식 컴포넌트 렌더링하는 역할
+
+```tsx
+const setStep = useCallback(
+  (step: Steps[number], setStepOptions?: SetStepOptions) => {
+    const { preserveQuery = true, query = {} } = setStepOptions ?? {};
+
+    const url = `${QS.create({
+      ...(preserveQuery ? router.query : undefined),
+      ...query,
+      [stepQueryKey]: step,
+    })}`;
+
+    options?.onStepChange?.(step);
+
+    switch (setStepOptions?.stepChangeType) {
+      case 'replace':
+        router.replace(url, undefined, {
+          shallow: true,
+        });
+        return;
+      case 'push':
+      default:
+        router.push(url, undefined, {
+          shallow: true,
+        });
+        return;
+    }
+  },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [options, router]
+);
+```
+
+- `step`
+    - 변경할 단계
+- `setStepOptions`
+    - 단계 변경에 대한 옵션: 쿼리 파라미터를 보존할지, 쿼리 파라미터 변경 등
+- `preserveQuery`를 기반으로 변경된 url 생성
+    - [QS.create](https://www.slash.page/ko/libraries/common/utils/src/querystring.i18n/#createquerystring-qscreate)를 활용해 쿼리 스트링을 제작
+- step이 변경될 때마다 호출되는 함수 `onStepChange`가 호출됨
+- `setStepOptions`의 `stepChangeType`에는 `push`와 `replace`가 있음
+    
+    → 해당 type에 따라 새로운 url로 이동하거나(`push`) 현재 페이지의 url을 새로운 url로 교체(`replace`)하는 동작 수행
