@@ -22,6 +22,7 @@
 
 - JSX.IntrinsicElements
   - html 태그의 타입이 맵핑된 객체
+  - 타입 확장을 통해 내장 html 태그 타입을 추가할 수도 있음 Ex. 웹 컴포넌트
 - JSXElementInstructor
   ```ts
   type JSXElementConstructor<P> =
